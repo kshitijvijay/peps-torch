@@ -120,6 +120,18 @@ def main():
     print(", ".join([f"{-1}", f"{e_curr0}"] + [f"{v}" for v in obs_values0]))
     ctm_env_init, *ctm_log = ctmrg.run(state, ctm_env_init, conv_check=ctmrg_conv_energy)
 
+    # 6) compute observables from final environment
+    e_currf = energy_f(state, ctm_env_init)
+    obs_valuesf, obs_labels = model.eval_obs(state, ctm_env_init)
+    print("\n")
+    print(", ".join(["epoch","energy"]+obs_labels))
+    print("FINAL "+", ".join([f"{e_currf}"]+[f"{v}" for v in obs_valuesf]))
+
+    # Inside ctmrg_blbqS1_anisotropy.py, before return statement
+    obs_values_float = [float(v.item()) if hasattr(v, 'item') else float(v) for v in obs_valuesf]
+    theta_str = f"{args.theta:.3f}".replace(".", "p")
+    with open(f'blbqS1_varratio_t{theta_str}_D{args.bond_dim}_X{args.chi}.txt', 'a') as f:
+        f.write(", ".join([f"{args.theta:.3f}", f"{args.ratio:.3f}"] + [str(float(e_currf.item()))] + [str(v) for v in obs_values_float]) + "\n")
 
     # compute horizontal and vertical two-point correlations
     corrSS = model.eval_corrf((0, 0), (1, 0), state, ctm_env_init, args.corrf_r)

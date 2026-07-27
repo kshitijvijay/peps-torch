@@ -150,6 +150,9 @@ def main():
     print("FINAL "+", ".join([f"{e_curr0}"]+[f"{v}" for v in obs_values0]))
     print(f"TIMINGS ctm: {t_ctm} conv_check: {t_obs}")
 
+    with open("j1j2_var_test.txt", "a") as f:
+        f.write(", ".join([f"{args.j1}", f"{args.j2}"] + [f"{v}" for v in obs_values0]) + "\n")
+
     # 7) ----- additional observables ---------------------------------------------
     corrSS= model.eval_corrf_SS(state, ctm_env_init, args.corrf_r, canonical=args.corrf_canonical)
     print("\n\nSS r "+" ".join([label for label in corrSS.keys()])+f" canonical {args.corrf_canonical}")
@@ -186,11 +189,16 @@ def main():
         for i in range(l.size()[0]):
             print(f"{i} {l[i,0]} {l[i,1]}")
 
+    return args.j1, args.j2, obs_values0
+
 if __name__=='__main__':
     if len(unknown_args)>0:
         print("args not recognized: "+str(unknown_args))
         raise Exception("Unknown command line arguments")
-    main()
+    j1, j2, obs_vals = main()
+
+# with open("j1j2_var.txt", "a") as f:
+#     f.write(", ".join([f"{j1}", f"{j2}"] + [f"{v}" for v in obs_vals]) + "\n")
 
 class TestCtmrg(unittest.TestCase):
     def setUp(self):

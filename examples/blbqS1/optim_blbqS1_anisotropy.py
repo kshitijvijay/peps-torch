@@ -164,6 +164,15 @@ def main():
     obs_values, obs_labels = model.eval_obs(state, ctm_env)
     print(", ".join([f"{args.opt_max_iter}", f"{opt_energy}"] + [f"{v}" for v in obs_values]))
 
+    e_2x1 = model.energy_2x1_1x2(state, ctm_env)
+    e_2x2 = model.energy_2x2_4site(state, ctm_env)
+
+    # Format with 3 decimals and replace dots
+    ratio_str = f"{args.ratio:.3f}".replace('.', 'p')
+    theta_str = f"{args.theta:.3f}".replace('.', 'p')
+    with open(f'blbqS1_D{args.bond_dim}_ratio{ratio_str}_theta{theta_str}.txt', 'a') as f:
+        f.write(", ".join([str(args.theta), str(args.ratio), str(args.chi), str(f"{opt_energy.item()}"), str(f"{e_2x1.item()}"), str(f"{e_2x2.item()}"), str(f"{abs(e_2x1.item() - e_2x2.item())}")]) + "\n")
+
 
 if __name__ == '__main__':
     if len(unknown_args) > 0:

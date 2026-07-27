@@ -213,17 +213,21 @@ class COUPLEDCHAINS():
         .. math::
             m = \sqrt{ \langle S^z \rangle^2+\langle S^x \rangle^2+\langle S^y \rangle^2 }.
         """
-        obs = dict({"avg_m": 0., "avg_II_Q": 0., "avg_III_Q": 0.})
+        obs = dict({"avg_m": 0., "anti_fm": 0., "avg_II_Q": 0., "avg_III_Q": 0.})
+        obs["anti_fm_c"] = np.array([0.0, 0.0, 0.0])
         with torch.no_grad():
             # one-site observables
             for coord, site in state.sites.items():
+                sign = 1.0 if (coord[0] + coord[1]) % 2 == 0 else -1.0
                 rdm1x1 = rdm.rdm1x1(coord, state, env)
-                for label in ["sz", "sp", "sm"]:
+                for label in ["sz", "sp", "sm", "sx", "isy"]:
                     op = self.obs_ops[label]
                     obs[f"{label}{coord}"] = torch.trace(rdm1x1 @ op)
                 obs[f"m{coord}"] = sqrt(abs(obs[f"sz{coord}"] ** 2 + obs[f"sp{coord}"] * obs[f"sm{coord}"]))
+                obs[f"anti_fm{coord}"] = sign * (np.array([obs[f"sz{coord}"].item(), obs[f"sx{coord}"].item(), obs[f"isy{coord}"].item()]))
                 # question?
                 obs["avg_m"] += obs[f"m{coord}"]
+                obs["anti_fm_c"] += obs[f"anti_fm{coord}"]
                 obs[f"Q{coord}"] = torch.einsum("ab,ijba->ij", rdm1x1, self.Q)
                 obs[f"avg_II_Q{coord}"] = - 1 / 2 * torch.trace((obs[f"Q{coord}"] * self.flip) @ obs[f"Q{coord}"])
                 obs[f"avg_III_Q{coord}"] = - torch.det(obs[f"Q{coord}"])
@@ -231,6 +235,7 @@ class COUPLEDCHAINS():
                 obs["avg_III_Q"] += obs[f"avg_III_Q{coord}"]
 
             obs["avg_m"] = obs["avg_m"] / len(state.sites.keys())
+            obs["anti_fm"] = np.linalg.norm(obs["anti_fm_c"]) / len(state.sites.keys())
             obs["avg_II_Q"] = obs["avg_II_Q"] / len(state.sites.keys())
             obs["avg_III_Q"] = obs["avg_III_Q"] / len(state.sites.keys())
 
@@ -247,7 +252,7 @@ class COUPLEDCHAINS():
             obs["dimer_op"] = self.eval_dimer_operator(state, env)
 
         # prepare list with labels and values
-        obs_labels = ["avg_m", "avg_II_Q", "avg_III_Q", "anti_fm", "dimer_op"] + _ss_and_ss2_labels
+        obs_labels = ["avg_m","anti_fm", "avg_II_Q", "avg_III_Q", "dimer_op"] + _ss_and_ss2_labels #removing "anti_fm" for now
         obs_values = [obs[label] for label in obs_labels]
         return obs_values, obs_labels
 
